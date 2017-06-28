@@ -2,12 +2,10 @@ import numpy as np
 import os
 import sys
 import tarfile
-from scipy import ndimage
 from six.moves.urllib.request import urlretrieve
 from six.moves import cPickle as pickle
 from PIL import Image
 import math
-from scipy import ndimage
 import random
 import re
 import scipy.io
@@ -19,7 +17,7 @@ from collections import defaultdict
 import tensorflow as tf
 import matplotlib.pyplot as plt
 
-# Load images, normalize data
+# Load data
 DROPOUT = 0.5
 LEARNING_RATE  = 0.001
 VALIDATION_SIZE = 0
@@ -49,6 +47,8 @@ for img in os.listdir(data_folder):
 
 data_dir.sort()
 
+# --------------------------------------------------------------------------
+# Ultils
 def print_activations(t):
     print(t.op.name, ' ', t.get_shape().as_list())
 
@@ -104,6 +104,8 @@ def max_pool_3x3(x):
 def max_pool_4x4(x):
     return tf.nn.max_pool(x, ksize=[1, 4, 4, 1], strides=[1, 4, 4, 1], padding='SAME')
 
+# Spatial Pyramid Pooling block
+# https://arxiv.org/abs/1406.4729
 def spatial_pyramid_pool(x, num_sample, image_size, out_pool_size):
     if str(image_size[0]) == '?':
         image_size[0] = 512
@@ -137,6 +139,8 @@ def spatial_pyramid_pool(x, num_sample, image_size, out_pool_size):
     
     return pool
 
+# --------------------------------------------------------------------------
+# Modeling
 size_cluster = defaultdict(list)
 for tid in trnid:
     img = Image.open(data_dir[tid])
@@ -152,6 +156,10 @@ x_range = []
 batch_size = 50
 print('Training ...')
 
+# Training block
+# 1. Combime all iamges have the same size to a batch.
+# 2. Then, train parameters in a batch
+# 3. Transfer trained parameters to another batch
 it = 0
 while it < TRAINING_ITERATIONS:
     graph = tf.Graph()
@@ -327,7 +335,6 @@ while it < TRAINING_ITERATIONS:
 
             # prob
             # softmax(name='prob'))
-            # prob = tf.nn.softmax(fc8)
             return fc8
         
         logits = model(x)
@@ -404,7 +411,7 @@ while it < TRAINING_ITERATIONS:
     sess.close()
     del sess
 	
-
+# Plot accuracy and loss curve
 plt.plot(x_range, train_cost,'-b')
 plt.ylabel('spp_cost')
 plt.xlabel('step')
@@ -416,6 +423,11 @@ plt.ylim(ymax = 1.1)
 plt.xlabel('step')
 plt.savefig('spp_accuracy.png')
 
+
+# --------------------------------------------------------------------------
+# Testing block
+# 1. Gather all images have the same size into a batch
+# 2. Feed to Alexnet_SPP to predict the expected labels
 it = 0
 result = list()
 f = open('result_spp.txt', 'w')
