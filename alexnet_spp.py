@@ -111,11 +111,6 @@ def spatial_pyramid_pool(previous_conv, num_sample, image_size, out_pool_size):
         image_size[0] = 512
     if str(image_size[1]) == '?':
         image_size[1] = 512
-        
-    h_strd = image_size[0] / out_pool_size[0]
-    w_strd = image_size[1] / out_pool_size[0]
-    h_wid = image_size[0] - h_strd * out_pool_size[0] + 1
-    w_wid = image_size[1] - w_strd * out_pool_size[0] + 1
     
     spp = tf.Variable(tf.truncated_normal([num_sample, ] stddev=0.01))
     
