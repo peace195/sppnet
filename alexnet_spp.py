@@ -106,7 +106,7 @@ def max_pool_4x4(x):
 
 # Spatial Pyramid Pooling block
 # https://arxiv.org/abs/1406.4729
-def spatial_pyramid_pool(x, num_sample, image_size, out_pool_size):
+def spatial_pyramid_pool(previous_conv, num_sample, image_size, out_pool_size):
     if str(image_size[0]) == '?':
         image_size[0] = 512
     if str(image_size[1]) == '?':
@@ -117,27 +117,23 @@ def spatial_pyramid_pool(x, num_sample, image_size, out_pool_size):
     h_wid = image_size[0] - h_strd * out_pool_size[0] + 1
     w_wid = image_size[1] - w_strd * out_pool_size[0] + 1
     
-    pool =  tf.nn.max_pool(x,
-                           ksize=[1,h_wid,w_wid, 1],
-                           strides=[1,h_strd, w_strd,1],
-                           padding='VALID')
-
-    pool = tf.reshape(pool, [int(num_sample), -1])
+    spp = tf.Variable(tf.truncated_normal([num_sample, ] stddev=0.01))
     
-    for i in range(1, len(out_pool_size)):
+    for i in range(0, len(out_pool_size)):
         h_strd = image_size[0] / out_pool_size[i]
         w_strd = image_size[1] / out_pool_size[i]
         h_wid = image_size[0] - h_strd * out_pool_size[i] + 1
         w_wid = image_size[1] - w_strd * out_pool_size[i] + 1
-        next_pool = tf.nn.max_pool(x,
+        max_pool = tf.nn.max_pool(previous_conv,
                                    ksize=[1,h_wid,w_wid, 1],
                                    strides=[1,h_strd, w_strd,1],
                                    padding='VALID')
-        
-        next_pool = tf.reshape(next_pool, [int(num_sample), -1])
-        pool = tf.concat(1, [pool, next_pool])
+        if (i == 0):
+			spp = tf.reshape(max_pool, [num_sample, -1])
+		else:
+			spp = tf.concat(1, [spp, tf.reshape(max_pool, [num_sample, -1])])
     
-    return pool
+    return spp
 
 # --------------------------------------------------------------------------
 # Modeling
