@@ -18,6 +18,9 @@ I implemented for identification task only. If you are interested in this projec
 	
 	$ python alexnet_spp.py
 
+## Result
+78% accuracy rate (the state-of-the-art is 94%).
+
 ## Author
 
 **Binh Thanh Do**
