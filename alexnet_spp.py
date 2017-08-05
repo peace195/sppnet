@@ -19,17 +19,17 @@ import matplotlib.pyplot as plt
 
 # Load data
 DROPOUT = 0.5
-LEARNING_RATE  = 0.001
+LEARNING_RATE  = 0.1
 VALIDATION_SIZE = 0
 TRAINING_ITERATIONS = 50000
-WEIGHT_DECAY = 0.0005
+WEIGHT_DECAY = 0.00005
 
 net_data = load("bvlc_alexnet.npy").item()
 
 out_pool_size = [8, 6, 4]
 hidden_dim = 0
 for item in out_pool_size:
-    hidden_dim = hidden_dim + item*item
+    hidden_dim = hidden_dim + item * item
     
 data_folder = './102flowers'
 labels = scipy.io.loadmat('imagelabels.mat')
@@ -86,10 +86,10 @@ def conv(input, kernel, biases, k_h, k_w, c_o, s_h, s_w, padding = "VALID", grou
     if group == 1:
         conv = convolve(input, kernel)
     else:
-        input_groups = tf.split(3, group, input)
-        kernel_groups = tf.split(3, group, kernel)
+        input_groups = tf.split(axis=3, num_or_size_splits=group, value=input)
+        kernel_groups = tf.split(axis=3, num_or_size_splits=group, value=kernel)
         output_groups = [convolve(i, k) for i, k in zip(input_groups, kernel_groups)]
-        conv = tf.concat(3, output_groups)
+        conv = tf.concat(axis=3, values=output_groups)
     return tf.reshape(tf.nn.bias_add(conv, biases), [-1] + conv.get_shape().as_list()[1:])
 
 def conv2d(x, W, stride_h, stride_w, padding='SAME'):
@@ -107,14 +107,16 @@ def max_pool_4x4(x):
 # Spatial Pyramid Pooling block
 # https://arxiv.org/abs/1406.4729
 def spatial_pyramid_pool(previous_conv, num_sample, previous_conv_size, out_pool_size):
-    if str(previous_conv_size[0]) == '?':
-        previous_conv_size[0] = 512
-    if str(previous_conv_size[1]) == '?':
-        previous_conv_size[1] = 512
+    '''
+    previous_conv: a tensor vector of previous convolution layer
+    num_sample: an int number of image in the batch
+    previous_conv_size: an int vector [height, width] of the matrix features size of previous convolution layer
+    out_pool_size: a int vector of expected output size of max pooling layer
     
-    spp = tf.Variable(tf.truncated_normal([num_sample, ] stddev=0.01))
-    
-    for i in range(0, len(out_pool_size)):
+    returns: a tensor vector with shape [1 x n] is the concentration of multi-level pooling
+    '''
+
+    for i in range(len(out_pool_size)):
         h_strd = previous_conv_size[0] / out_pool_size[i]
         w_strd = previous_conv_size[1] / out_pool_size[i]
         h_wid = previous_conv_size[0] - h_strd * out_pool_size[i] + 1
@@ -126,7 +128,7 @@ def spatial_pyramid_pool(previous_conv, num_sample, previous_conv_size, out_pool
         if (i == 0):
             spp = tf.reshape(max_pool, [num_sample, -1])
         else:
-            spp = tf.concat(1, [spp, tf.reshape(max_pool, [num_sample, -1])])
+            spp = tf.concat(axis=1, values=[spp, tf.reshape(max_pool, [num_sample, -1])])
     
     return spp
 
@@ -144,7 +146,7 @@ train_accuracies = []
 train_cost = []
 validation_accuracies = []
 x_range = []
-batch_size = 50
+batch_size = 20
 print('Training ...')
 
 # Training block
@@ -174,9 +176,6 @@ while it < TRAINING_ITERATIONS:
                                        [size_cluster_keys[it%len(size_cluster_keys)][1]/2,
                                        size_cluster_keys[it%len(size_cluster_keys)][0]/2],
                                        method=1, align_corners=False)
-
-        # x_train.set_shape((size_cluster_keys[it%len(size_cluster_keys)][0],
-        #                                   size_cluster_keys[it%len(size_cluster_keys)][1], 3))
 
         x_train, y_train = tf.train.batch([x_train, y_train], batch_size = batch_size)
 
@@ -307,8 +306,8 @@ while it < TRAINING_ITERATIONS:
             s_h = 2
             s_w = 2
             maxpool5 = spatial_pyramid_pool(conv5,
-                                            conv5.get_shape()[0],
-                                           [conv5.get_shape()[1], conv5.get_shape()[2]],
+                                            int(conv5.get_shape()[0]),
+                                           [int(conv5.get_shape()[1]), int(conv5.get_shape()[2])],
                                            out_pool_size)
 
             # fc6
@@ -329,7 +328,7 @@ while it < TRAINING_ITERATIONS:
             return fc8
         
         logits = model(x)
-        cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits, y_))
+        cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=y_))
         regularizers = tf.nn.l2_loss(conv1W) + tf.nn.l2_loss(conv1b) + \
                        tf.nn.l2_loss(conv2W) + tf.nn.l2_loss(conv2b) + \
                        tf.nn.l2_loss(conv3W) + tf.nn.l2_loss(conv3b) + \
@@ -341,16 +340,16 @@ while it < TRAINING_ITERATIONS:
 
         loss = tf.reduce_mean(cross_entropy + WEIGHT_DECAY * regularizers)
 
-        cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits, y_))
+        cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=y_))
         # optimisation loss function
         global_step = tf.Variable(0)
-        learning_rate = tf.train.exponential_decay(LEARNING_RATE, global_step, 10000, 0.9, staircase=True)
-        train_step = tf.train.GradientDescentOptimizer(learning_rate).minimize(loss, global_step=global_step)
+        learning_rate = tf.train.exponential_decay(LEARNING_RATE, global_step, 1000, 0.9, staircase=True)
+        train_step = tf.train.AdagradOptimizer(learning_rate).minimize(loss)
 
         # evaluation
-        correct_prediction = tf.equal(tf.argmax(logits,1), tf.argmax(y_,1))
+        correct_prediction = tf.equal(tf.argmax(logits, 1), tf.argmax(y_, 1))
         accuracy = tf.reduce_mean(tf.cast(correct_prediction, 'float'))
-        predict = tf.argmax(logits,1)
+        predict = tf.argmax(logits, 1)
         saver = tf.train.Saver({v.op.name: v for v in [conv1W, conv1b,
                                                        conv2W, conv2b,
                                                        conv3W, conv3b,
@@ -362,31 +361,27 @@ while it < TRAINING_ITERATIONS:
 
 
     with tf.Session(graph=graph) as sess:
-        init = tf.initialize_all_variables()
+        init = tf.global_variables_initializer()
         sess.run(init)
         coord = tf.train.Coordinator()
         threads = tf.train.start_queue_runners(coord=coord)
-        # saver.restore(sess, './alex_model_spp.ckpt')
+        if os.path.exists('./alex_model_spp.ckpt'):
+            saver.restore(sess, './alex_model_spp.ckpt')
 
         cnt_tmp = 0
         xtrain, ytrain = sess.run([x_train, y_train])
-        for i in range(1000):
+        for i in range(10):
             it = it + 1
-            train_accuracy = accuracy.eval(feed_dict = {x: xtrain,
-                                                        y_: ytrain, 
-                                                        keep_prob: 1.0})
-            
-            
-            cost = cross_entropy.eval(feed_dict = {x: xtrain, 
-                                                   y_: ytrain, 
-                                                   keep_prob: 1.0})
+            _, train_accuracy, cost = sess.run([train_step, accuracy, cross_entropy], 
+                                            feed_dict = {x: xtrain,
+                                                         y_: ytrain, 
+                                                         keep_prob: 1.0})
             
             print('training_accuracy => %.4f, cost value => %.4f for step %d'
                   %(train_accuracy, cost, it))
 
             if (train_accuracy > 0.95):
                 cnt_tmp = cnt_tmp + 1
-            #    break
 
             if (cnt_tmp > 10):
                 break
@@ -394,7 +389,6 @@ while it < TRAINING_ITERATIONS:
             train_accuracies.append(train_accuracy)
             x_range.append(it)
             train_cost.append(cost)
-            sess.run(train_step, feed_dict = {x: xtrain, y_: ytrain, keep_prob: 1.0})
 
         saver.save(sess, './alex_model_spp.ckpt')
         coord.request_stop()
@@ -568,8 +562,8 @@ while it < len(tstid):
             s_h = 2
             s_w = 2
             maxpool5 = spatial_pyramid_pool(conv5,
-                                            conv5.get_shape()[0],
-                                           [conv5.get_shape()[1], conv5.get_shape()[2]],
+                                            int(conv5.get_shape()[0]),
+                                           [int(conv5.get_shape()[1]), int(conv5.get_shape()[2])],
                                            out_pool_size)
 
             # fc6
@@ -602,7 +596,7 @@ while it < len(tstid):
                                                        fc8W, fc8b]})
 
     with tf.Session(graph=graph) as sess:
-        init = tf.initialize_all_variables()
+        init = tf.global_variables_initializer()
         sess.run(init)
         coord = tf.train.Coordinator()
         threads = tf.train.start_queue_runners(coord=coord)
