@@ -11,7 +11,7 @@ I implemented for identification task only. If you are interested in this projec
 ## Requirements
 
 * python 2.7
-* tensorflow 0.12.1
+* tensorflow 1.2
 * pretrained parameters of AlexNet in ImageNet dataset: [bvlc_alexnet.npy](http://www.cs.toronto.edu/~guerzhoy/tf_alexnet/) 
 
 ## Running
@@ -19,7 +19,7 @@ I implemented for identification task only. If you are interested in this projec
 	$ python alexnet_spp.py
 
 ## Result
-78% accuracy rate (the state-of-the-art is 94%).
+82% accuracy rate (the state-of-the-art is 94%).
 
 ## Author
 

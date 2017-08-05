@@ -107,9 +107,9 @@ def max_pool_4x4(x):
 # Spatial Pyramid Pooling block
 # https://arxiv.org/abs/1406.4729
 def spatial_pyramid_pool(previous_conv, num_sample, previous_conv_size, out_pool_size):
-    if str(image_size[0]) == '?':
+    if str(previous_conv_size[0]) == '?':
         previous_conv_size[0] = 512
-    if str(image_size[1]) == '?':
+    if str(previous_conv_size[1]) == '?':
         previous_conv_size[1] = 512
     
     spp = tf.Variable(tf.truncated_normal([num_sample, ] stddev=0.01))
@@ -124,9 +124,9 @@ def spatial_pyramid_pool(previous_conv, num_sample, previous_conv_size, out_pool
                                    strides=[1,h_strd, w_strd,1],
                                    padding='VALID')
         if (i == 0):
-			spp = tf.reshape(max_pool, [num_sample, -1])
-		else:
-			spp = tf.concat(1, [spp, tf.reshape(max_pool, [num_sample, -1])])
+            spp = tf.reshape(max_pool, [num_sample, -1])
+        else:
+            spp = tf.concat(1, [spp, tf.reshape(max_pool, [num_sample, -1])])
     
     return spp
 
@@ -205,19 +205,19 @@ while it < TRAINING_ITERATIONS:
         def model(x):
             # conv1
             # conv(11, 11, 96, 4, 4, padding='VALID', name='conv1')
-            k_h = 11;
-            k_w = 11;
-            c_o = 96;
-            s_h = 4;
+            k_h = 11
+            k_w = 11
+            c_o = 96
+            s_h = 4
             s_w = 4
             conv1_in = conv(x, conv1W, conv1b, k_h, k_w, c_o, s_h, s_w, padding="SAME", group=1)
             conv1 = tf.nn.relu(conv1_in)
 
             # lrn1
             # lrn(2, 2e-05, 0.75, name='norm1')
-            radius = 5;
-            alpha = 0.0001;
-            beta = 0.75;
+            radius = 5
+            alpha = 0.0001
+            beta = 0.75
             bias = 1.0
             lrn1 = tf.nn.local_response_normalization(conv1,
                                                       depth_radius=radius,
@@ -227,29 +227,29 @@ while it < TRAINING_ITERATIONS:
 
             # maxpool1
             # max_pool(3, 3, 2, 2, padding='VALID', name='pool1')
-            k_h = 3;
-            k_w = 3;
-            s_h = 2;
-            s_w = 2;
+            k_h = 3
+            k_w = 3
+            s_h = 2
+            s_w = 2
             padding = 'VALID'
             maxpool1 = tf.nn.max_pool(lrn1, ksize=[1, k_h, k_w, 1], strides=[1, s_h, s_w, 1], padding=padding)
 
             # conv2
             # conv(5, 5, 256, 1, 1, group=2, name='conv2')
-            k_h = 5;
-            k_w = 5;
-            c_o = 256;
-            s_h = 1;
-            s_w = 1;
+            k_h = 5
+            k_w = 5
+            c_o = 256
+            s_h = 1
+            s_w = 1
             group = 2
             conv2_in = conv(maxpool1, conv2W, conv2b, k_h, k_w, c_o, s_h, s_w, padding="SAME", group=group)
             conv2 = tf.nn.relu(conv2_in)
 
             # lrn2
             # lrn(2, 2e-05, 0.75, name='norm2')
-            radius = 5;
-            alpha = 0.0001;
-            beta = 0.75;
+            radius = 5
+            alpha = 0.0001
+            beta = 0.75
             bias = 1.0
             lrn2 = tf.nn.local_response_normalization(conv2,
                                                       depth_radius=radius,
@@ -259,20 +259,20 @@ while it < TRAINING_ITERATIONS:
 
             # maxpool2
             # max_pool(3, 3, 2, 2, padding='VALID', name='pool2')
-            k_h = 3;
-            k_w = 3;
-            s_h = 2;
-            s_w = 2;
+            k_h = 3
+            k_w = 3
+            s_h = 2
+            s_w = 2
             padding = 'VALID'
             maxpool2 = tf.nn.max_pool(lrn2, ksize=[1, k_h, k_w, 1], strides=[1, s_h, s_w, 1], padding=padding)
 
             # conv3
             # conv(3, 3, 384, 1, 1, name='conv3')
-            k_h = 3;
-            k_w = 3;
-            c_o = 384;
-            s_h = 1;
-            s_w = 1;
+            k_h = 3
+            k_w = 3
+            c_o = 384
+            s_h = 1
+            s_w = 1
             group = 1
 
             conv3_in = conv(maxpool2, conv3W, conv3b, k_h, k_w, c_o, s_h, s_w, padding="SAME", group=group)
@@ -280,32 +280,32 @@ while it < TRAINING_ITERATIONS:
 
             # conv4
             # conv(3, 3, 384, 1, 1, group=2, name='conv4')
-            k_h = 3;
-            k_w = 3;
-            c_o = 384;
-            s_h = 1;
-            s_w = 1;
+            k_h = 3
+            k_w = 3
+            c_o = 384
+            s_h = 1
+            s_w = 1
             group = 2
             conv4_in = conv(conv3, conv4W, conv4b, k_h, k_w, c_o, s_h, s_w, padding="SAME", group=group)
             conv4 = tf.nn.relu(conv4_in)
 
             # conv5
             # conv(3, 3, 256, 1, 1, group=2, name='conv5')
-            k_h = 3;
-            k_w = 3;
-            c_o = 256;
-            s_h = 1;
-            s_w = 1;
+            k_h = 3
+            k_w = 3
+            c_o = 256
+            s_h = 1
+            s_w = 1
             group = 2
             conv5_in = conv(conv4, conv5W, conv5b, k_h, k_w, c_o, s_h, s_w, padding="SAME", group=group)
             conv5 = tf.nn.relu(conv5_in)
 
             # maxpool5
             # max_pool(3, 3, 2, 2, padding='VALID', name='pool5')
-            k_h = 3;
-            k_w = 3;
-            s_h = 2;
-            s_w = 2;
+            k_h = 3
+            k_w = 3
+            s_h = 2
+            s_w = 2
             maxpool5 = spatial_pyramid_pool(conv5,
                                             conv5.get_shape()[0],
                                            [conv5.get_shape()[1], conv5.get_shape()[2]],
@@ -401,7 +401,7 @@ while it < TRAINING_ITERATIONS:
         coord.join(threads)
     sess.close()
     del sess
-	
+    
 # Plot accuracy and loss curve
 plt.plot(x_range, train_cost,'-b')
 plt.ylabel('spp_cost')
@@ -466,19 +466,19 @@ while it < len(tstid):
         def model(x):
             # conv1
             # conv(11, 11, 96, 4, 4, padding='VALID', name='conv1')
-            k_h = 11;
-            k_w = 11;
-            c_o = 96;
-            s_h = 4;
+            k_h = 11
+            k_w = 11
+            c_o = 96
+            s_h = 4
             s_w = 4
             conv1_in = conv(x, conv1W, conv1b, k_h, k_w, c_o, s_h, s_w, padding="SAME", group=1)
             conv1 = tf.nn.relu(conv1_in)
 
             # lrn1
             # lrn(2, 2e-05, 0.75, name='norm1')
-            radius = 5;
-            alpha = 0.0001;
-            beta = 0.75;
+            radius = 5
+            alpha = 0.0001
+            beta = 0.75
             bias = 1.0
             lrn1 = tf.nn.local_response_normalization(conv1,
                                                       depth_radius=radius,
@@ -488,29 +488,29 @@ while it < len(tstid):
 
             # maxpool1
             # max_pool(3, 3, 2, 2, padding='VALID', name='pool1')
-            k_h = 3;
-            k_w = 3;
-            s_h = 2;
-            s_w = 2;
+            k_h = 3
+            k_w = 3
+            s_h = 2
+            s_w = 2
             padding = 'VALID'
             maxpool1 = tf.nn.max_pool(lrn1, ksize=[1, k_h, k_w, 1], strides=[1, s_h, s_w, 1], padding=padding)
 
             # conv2
             # conv(5, 5, 256, 1, 1, group=2, name='conv2')
-            k_h = 5;
-            k_w = 5;
-            c_o = 256;
-            s_h = 1;
-            s_w = 1;
+            k_h = 5
+            k_w = 5
+            c_o = 256
+            s_h = 1
+            s_w = 1
             group = 2
             conv2_in = conv(maxpool1, conv2W, conv2b, k_h, k_w, c_o, s_h, s_w, padding="SAME", group=group)
             conv2 = tf.nn.relu(conv2_in)
 
             # lrn2
             # lrn(2, 2e-05, 0.75, name='norm2')
-            radius = 5;
-            alpha = 0.0001;
-            beta = 0.75;
+            radius = 5
+            alpha = 0.0001
+            beta = 0.75
             bias = 1.0
             lrn2 = tf.nn.local_response_normalization(conv2,
                                                       depth_radius=radius,
@@ -520,20 +520,20 @@ while it < len(tstid):
 
             # maxpool2
             # max_pool(3, 3, 2, 2, padding='VALID', name='pool2')
-            k_h = 3;
-            k_w = 3;
-            s_h = 2;
-            s_w = 2;
+            k_h = 3
+            k_w = 3
+            s_h = 2
+            s_w = 2
             padding = 'VALID'
             maxpool2 = tf.nn.max_pool(lrn2, ksize=[1, k_h, k_w, 1], strides=[1, s_h, s_w, 1], padding=padding)
 
             # conv3
             # conv(3, 3, 384, 1, 1, name='conv3')
-            k_h = 3;
-            k_w = 3;
-            c_o = 384;
-            s_h = 1;
-            s_w = 1;
+            k_h = 3
+            k_w = 3
+            c_o = 384
+            s_h = 1
+            s_w = 1
             group = 1
 
             conv3_in = conv(maxpool2, conv3W, conv3b, k_h, k_w, c_o, s_h, s_w, padding="SAME", group=group)
@@ -541,32 +541,32 @@ while it < len(tstid):
 
             # conv4
             # conv(3, 3, 384, 1, 1, group=2, name='conv4')
-            k_h = 3;
-            k_w = 3;
-            c_o = 384;
-            s_h = 1;
-            s_w = 1;
+            k_h = 3
+            k_w = 3
+            c_o = 384
+            s_h = 1
+            s_w = 1
             group = 2
             conv4_in = conv(conv3, conv4W, conv4b, k_h, k_w, c_o, s_h, s_w, padding="SAME", group=group)
             conv4 = tf.nn.relu(conv4_in)
 
             # conv5
             # conv(3, 3, 256, 1, 1, group=2, name='conv5')
-            k_h = 3;
-            k_w = 3;
-            c_o = 256;
-            s_h = 1;
-            s_w = 1;
+            k_h = 3
+            k_w = 3
+            c_o = 256
+            s_h = 1
+            s_w = 1
             group = 2
             conv5_in = conv(conv4, conv5W, conv5b, k_h, k_w, c_o, s_h, s_w, padding="SAME", group=group)
             conv5 = tf.nn.relu(conv5_in)
 
             # maxpool5
             # max_pool(3, 3, 2, 2, padding='VALID', name='pool5')
-            k_h = 3;
-            k_w = 3;
-            s_h = 2;
-            s_w = 2;
+            k_h = 3
+            k_w = 3
+            s_h = 2
+            s_w = 2
             maxpool5 = spatial_pyramid_pool(conv5,
                                             conv5.get_shape()[0],
                                            [conv5.get_shape()[1], conv5.get_shape()[2]],
