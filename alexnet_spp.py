@@ -115,23 +115,16 @@ def spatial_pyramid_pool(previous_conv, num_sample, previous_conv_size, out_pool
   
   returns: a tensor vector with shape [1 x n] is the concentration of multi-level pooling
   """
-  new_previous_conv = previous_conv
   for i in range(len(out_pool_size)):
     h_strd = h_size = math.ceil(float(previous_conv_size[0]) / out_pool_size[i])
     w_strd = w_size = math.ceil(float(previous_conv_size[1]) / out_pool_size[i])
-
-    if previous_conv_size[0] % h_strd == 0:
-      new_previous_conv = tf.pad(new_previous_conv, tf.constant([[0, 0], [0, 1], [0, 0], [0, 0]]))
-    elif previous_conv_size[1] % w_strd == 0:
-      new_previous_conv = tf.pad(new_previous_conv, tf.constant([[0, 0], [0, 0], [0, 1], [0, 0]]))
-    else:
-      new_previous_conv = previous_conv
-
+    pad_h = int(out_pool_size[i] * h_size - previous_conv_size[0])
+    pad_w = int(out_pool_size[i] * w_size - previous_conv_size[1])
+    new_previous_conv = tf.pad(previous_conv, tf.constant([[0, 0], [0, pad_h], [0, pad_w], [0, 0]]))
     max_pool = tf.nn.max_pool(new_previous_conv,
                    ksize=[1,h_size, h_size, 1],
                    strides=[1,h_strd, w_strd,1],
                    padding='SAME')
-
     if (i == 0):
       spp = tf.reshape(max_pool, [num_sample, -1])
     else:
