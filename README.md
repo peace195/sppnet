@@ -24,5 +24,5 @@ I implemented for identification task only. If you are interested in this projec
 
 ## Author
 
-**Binh Thanh Do**
+**Binh Do**
 
