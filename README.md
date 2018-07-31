@@ -1,9 +1,11 @@
 # Spatial Pyramid Pooling in Deep Convolutional Networks using tensorflow
 
 ## New updates
+Instead of sppnet, you can use:
 
 ```python
-#With these lines of code below, we can memorize the gradient for later updates using pytorch because the #loss.backward()function accumulates the gradient. After 64 steps, we call optimizer.step() for updating the parameters.
+#With these lines of code below, we can memorize the gradient for later updates using pytorch because the
+#loss.backward()function accumulates the gradient. After 64 steps, we call optimizer.step() for updating the parameters.
 #https://discuss.pytorch.org/t/how-are-optimizer-step-and-loss-backward-related/7350
 train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=1, num_workers=8, shuffle=True)
 test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=1, num_workers=8, shuffle=False)
