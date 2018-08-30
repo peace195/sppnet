@@ -1,7 +1,7 @@
 # Spatial Pyramid Pooling in Deep Convolutional Networks using tensorflow
 
 ## New updates
-Instead of sppnet, you can use:
+Instead of sppnet, you can use this block of code in Pytorch to train a neural network with variable-sized inputs:
 
 ```python
 #With these lines of code below, we can memorize the gradient for later updates using pytorch because the
